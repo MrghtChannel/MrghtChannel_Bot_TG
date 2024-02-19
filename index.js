@@ -3,7 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const token = 'YOUR_TELEGRAM_BOT_TOKEN';
 const bot = new TelegramBot(token, { polling: true });
 
-// Клавиатура с выбором языка и флагами
+
 const languageKeyboard = {
     reply_markup: {
         keyboard: [
@@ -13,7 +13,7 @@ const languageKeyboard = {
     },
 };
 
-// Функция для создания кнопки "Выбрать другой язык"
+
 function changeLanguageButton(lang) {
     switch (lang) {
         case '🇺🇦 Українська мова':
@@ -27,7 +27,7 @@ function changeLanguageButton(lang) {
     }
 }
 
-// Клавиатура с основными действиями и кнопкой "Выбрать другой язык"
+
 function mainKeyboard(lang) {
     let aboutText, projectsText;
     switch (lang) {
@@ -59,7 +59,7 @@ function mainKeyboard(lang) {
     };
 }
 
-// Обработчик команд и текстовых сообщений
+
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const messageText = msg.text;
