@@ -9,7 +9,7 @@ const de = require('./language/de');
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const adminId = process.env.ADMIN_ID;
-const bot = new TelegramBot(token, { polling: true });
+const bot = new TelegramBot(token, { polling: true }); 
 
 const languageMap = {
     '🇺🇦 Українська мова': ua,
@@ -112,3 +112,4 @@ bot.on('message', (msg) => {
         bot.sendMessage(chatId, lang.errors.unknownCommand);
     }
 });
+
