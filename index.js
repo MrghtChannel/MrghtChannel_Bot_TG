@@ -1,82 +1,106 @@
+require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
+const web = require('./modules/web');
 
-const token = 'YOUR_TELEGRAM_BOT_TOKEN';
+const ua = require('./language/ua');
+const en = require('./language/en');
+const de = require('./language/de');
+
+const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-
-const languageKeyboard = {
-    reply_markup: {
-        keyboard: [
-            [{ text: '🇺🇦 Українська мова' }, { text: '🇬🇧 Englisch' }, { text: '🇩🇪 Deutsch' }],
-        ],
-        resize_keyboard: true,
-    },
+const languageMap = {
+    '🇺🇦 Українська мова': ua,
+    '🇬🇧 English': en,
+    '🇩🇪 Deutsch': de,
 };
-
-
-function changeLanguageButton(lang) {
-    switch (lang) {
-        case '🇺🇦 Українська мова':
-            return { text: 'Змінити мову 🔄' };
-        case '🇬🇧 Englisch':
-            return { text: 'Change language 🔄' };
-        case '🇩🇪 Deutsch':
-            return { text: 'Sprache ändern 🔄' };
-        default:
-            return { text: 'Change language 🔄' };
-    }
-}
-
+const userLanguage = {};
 
 function mainKeyboard(lang) {
-    let aboutText, projectsText;
-    switch (lang) {
-        case '🇺🇦 Українська мова':
-            aboutText = 'Про нас';
-            projectsText = 'Проєкти';
-            break;
-        case '🇬🇧 Englisch':
-            aboutText = 'About us';
-            projectsText = 'Projects';
-            break;
-        case '🇩🇪 Deutsch':
-            aboutText = 'Über uns';
-            projectsText = 'Projekte';
-            break;
-        default:
-            aboutText = 'About us';
-            projectsText = 'Projects';
-            break;
-    }
     return {
         reply_markup: {
             keyboard: [
-                [{ text: aboutText }, { text: projectsText }],
-                [{ text: 'News' }, changeLanguageButton(lang)],
+                [
+                    { text: lang.mainMenu.about },
+                    { text: lang.mainMenu.projects },
+                ],
+                [
+                    { text: lang.mainMenu.news },
+                    { text: lang.mainMenu.changeLanguage },
+                ],
+                [
+                    {
+                        text: '🌐 Open Web App',
+                        ...web.getWebAppMenuOption(), 
+                    },
+                ],
             ],
             resize_keyboard: true,
         },
     };
 }
 
+const languageKeyboard = {
+    reply_markup: {
+        keyboard: [
+            [
+                { text: '🇺🇦 Українська мова' },
+                { text: '🇬🇧 English' },
+                { text: '🇩🇪 Deutsch' },
+            ],
+        ],
+        resize_keyboard: true,
+    },
+};
 
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const messageText = msg.text;
 
     if (messageText === '/start') {
-        bot.sendMessage(chatId, 'Виберіть мову:', languageKeyboard);
-    } else if (messageText === '🇺🇦 Українська мова' || messageText === '🇬🇧 Englisch' || messageText === '🇩🇪 Deutsch') {
-        bot.sendMessage(chatId, 'Мова обрана: ' + messageText, mainKeyboard(messageText));
-    } else if (messageText === 'Про нас' || messageText === 'About us' || messageText === 'Über uns') {
-        bot.sendMessage(chatId, 'Website:https://mrghtchannel.github.io/Website-MrghtChannel/\n\Discord:https://discord.gg/XnXJCQhwyv\n\Facebook:https://www.facebook.com/profile.php?id=100089807778533\n\Twitter:https://twitter.com/MrghtChannel\n\Reddit:https://www.reddit.com/user/MrghtChannel/');
-    } else if (messageText === 'Проєкти' || messageText === 'Projects' || messageText === 'Projekte') {
-        bot.sendMessage(chatId, 'Тут ви знайдете наші open-source проєкти\n\Here you will find our open-source projects\n\Hier finden Sie unsere Open-Source-Projekte/:\n- https://github.com/MrghtChannel\n- https://gitlab.com/MrghtChannel');
-    } else if (messageText === 'News') {
-        bot.sendPhoto(chatId, 'https://sitechecker.pro/wp-content/uploads/2023/06/404-status-code.png', { caption: 'Наразі ми працюємо над оновленням новин. Будь ласка, зайдіть пізніше.\n\nWe are currently working on updating the news. Please come back later.\n\nWir arbeiten derzeit an der Aktualisierung der Neuigkeiten. Bitte komme später zurück.' });
-    } else if (messageText === 'Змінити мову 🔄' || messageText === 'Change language 🔄' || messageText === 'Sprache ändern 🔄') {
-        bot.sendMessage(chatId, 'Виберіть іншу мову:', languageKeyboard);
+        bot.sendMessage(
+            chatId,
+            '🌍 Виберіть мову / Select your language / Wählen Sie Ihre Sprache:',
+            languageKeyboard
+        );
+        return;
+    }
+
+    if (languageMap[messageText]) {
+        userLanguage[chatId] = languageMap[messageText];
+        bot.sendMessage(
+            chatId,
+            userLanguage[chatId].languageSelected,
+            mainKeyboard(userLanguage[chatId])
+        );
+        return;
+    }
+
+    const lang = userLanguage[chatId] || en;
+
+    if (messageText === lang.mainMenu.about) {
+        const aboutText = `${lang.aboutSection.title}\n\n` +
+                          `${lang.aboutSection.links.website}\n` +
+                          `${lang.aboutSection.links.discord}\n` +
+                          `${lang.aboutSection.links.facebook}\n` +
+                          `${lang.aboutSection.links.twitter}\n` +
+                          `${lang.aboutSection.links.reddit}`;
+        bot.sendMessage(chatId, aboutText);
+    } else if (messageText === lang.mainMenu.projects) {
+        const projectsText = `${lang.projectsSection.title}\n\n` +
+                             `${lang.projectsSection.description}\n\n` +
+                             `${lang.projectsSection.links.github}\n` +
+                             `${lang.projectsSection.links.gitlab}`;
+        bot.sendMessage(chatId, projectsText);
+    } else if (messageText === lang.mainMenu.news) {
+        bot.sendMessage(chatId, `${lang.newsSection.title}\n\n${lang.newsSection.message}`);
+    } else if (messageText === lang.mainMenu.changeLanguage) {
+        bot.sendMessage(
+            chatId,
+            '🌍 Виберіть іншу мову / Select a different language / Wählen Sie eine andere Sprache:',
+            languageKeyboard
+        );
     } else {
-        bot.sendMessage(chatId, 'Я не розумію вашого повідомлення.');
+        bot.sendMessage(chatId, lang.errors.unknownCommand);
     }
 });
