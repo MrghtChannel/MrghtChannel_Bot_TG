@@ -1,12 +1,14 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const web = require('./modules/web');
+const notifications = require('./modules/notifications');
 
 const ua = require('./language/ua');
 const en = require('./language/en');
 const de = require('./language/de');
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
+const adminId = process.env.ADMIN_ID;
 const bot = new TelegramBot(token, { polling: true });
 
 const languageMap = {
@@ -15,6 +17,7 @@ const languageMap = {
     '🇩🇪 Deutsch': de,
 };
 const userLanguage = {};
+const users = new Set();
 
 function mainKeyboard(lang) {
     return {
@@ -56,6 +59,8 @@ const languageKeyboard = {
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const messageText = msg.text;
+
+    users.add(chatId);
 
     if (messageText === '/start') {
         bot.sendMessage(
@@ -100,6 +105,9 @@ bot.on('message', (msg) => {
             '🌍 Виберіть іншу мову / Select a different language / Wählen Sie eine andere Sprache:',
             languageKeyboard
         );
+    } else if (notifications.isAdminCommand(chatId, messageText)) {
+        notifications.sendNotifications(bot, users, messageText);
+        bot.sendMessage(chatId, '✅ Повідомлення успішно надіслано всім користувачам.');
     } else {
         bot.sendMessage(chatId, lang.errors.unknownCommand);
     }
